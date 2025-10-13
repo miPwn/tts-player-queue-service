@@ -28,29 +28,27 @@ void ApiServer::start() {
             std::string text;
             std::vector<char> wav_data;
 
-            // Check for text field in multipart form
-            if (req.is_multipart_form_data()) {
-                auto text_param = req.get_param_value("text");
-                if (!text_param.empty()) {
-                    text = text_param;
-                } else {
-                    res.status = 400;
-                    res.set_content("{\"error\": \"Missing 'text' field\"}", "application/json");
-                    return;
-                }
+            // Get text parameter from multipart form
+            if (req.has_param("text")) {
+                text = req.get_param_value("text");
+            } else {
+                res.status = 400;
+                res.set_content("{\"error\": \"Missing 'text' field\"}", "application/json");
+                return;
+            }
 
-                // Check for wav file in multipart form
+            // Get wav file from multipart form
+            try {
                 auto wav_file = req.get_file_value("wav");
-                if (!wav_file.content.empty()) {
-                    wav_data.assign(wav_file.content.begin(), wav_file.content.end());
-                } else {
+                if (wav_file.content.empty()) {
                     res.status = 400;
                     res.set_content("{\"error\": \"Missing 'wav' file\"}", "application/json");
                     return;
                 }
-            } else {
+                wav_data.assign(wav_file.content.begin(), wav_file.content.end());
+            } catch (...) {
                 res.status = 400;
-                res.set_content("{\"error\": \"Content-Type must be multipart/form-data\"}", "application/json");
+                res.set_content("{\"error\": \"Missing 'wav' file\"}", "application/json");
                 return;
             }
 
