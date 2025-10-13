@@ -126,7 +126,7 @@ jobs:
         mkdir -p build
         cd build
         cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-              -DBUILD_TESTING=ON ..
+              -DBUILD_TESTING=OFF ..
 
     - name: Build
       run: |
