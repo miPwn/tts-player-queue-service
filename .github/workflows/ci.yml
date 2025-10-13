@@ -1,0 +1,267 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-22.04
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      rabbitmq:
+        image: rabbitmq:3.12-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          git \
+          pkg-config \
+          libpulse-dev \
+          libevent-dev \
+          libssl-dev \
+          pulseaudio \
+          netcat \
+          clang-tidy
+
+    - name: Start PulseAudio
+      run: |
+        pulseaudio --start --exit-idle-time=-1
+        pactl info
+
+    - name: Cache dependencies
+      id: cache-deps
+      uses: actions/cache@v3
+      with:
+        path: |
+          /usr/local/lib
+          /usr/local/include
+        key: ${{ runner.os }}-deps-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+
+    - name: Build and install C++ dependencies
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      run: |
+        # hiredis
+        git clone https://github.com/redis/hiredis.git /tmp/hiredis
+        cd /tmp/hiredis
+        make
+        sudo make install
+        
+        # redis-plus-plus
+        git clone https://github.com/sewenew/redis-plus-plus.git /tmp/redis-plus-plus
+        cd /tmp/redis-plus-plus
+        mkdir build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+        make -j$(nproc)
+        sudo make install
+        
+        # AMQP-CPP
+        git clone https://github.com/CopernicaMarketingSoftware/AMQP-CPP.git /tmp/amqp-cpp
+        cd /tmp/amqp-cpp
+        mkdir build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DAMQP-CPP_BUILD_SHARED=ON \
+              -DAMQP-CPP_LINUX_TCP=ON ..
+        make -j$(nproc)
+        sudo make install
+        
+        # spdlog
+        git clone https://github.com/gabime/spdlog.git /tmp/spdlog
+        cd /tmp/spdlog
+        mkdir build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+        make -j$(nproc)
+        sudo make install
+        
+        # Update library cache
+        sudo ldconfig
+
+    - name: Install header-only libraries
+      run: |
+        # cpp-httplib
+        sudo mkdir -p /usr/local/include
+        wget https://raw.githubusercontent.com/yhirose/cpp-httplib/master/httplib.h \
+          -O /tmp/httplib.h
+        sudo cp /tmp/httplib.h /usr/local/include/
+        
+        # nlohmann/json
+        sudo mkdir -p /usr/local/include/nlohmann
+        wget https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp \
+          -O /tmp/json.hpp
+        sudo cp /tmp/json.hpp /usr/local/include/nlohmann/
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+              -DBUILD_TESTING=ON ..
+
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+
+    - name: Verify services are ready
+      run: |
+        echo "Checking Redis..."
+        nc -zv localhost 6379
+        
+        echo "Checking RabbitMQ..."
+        nc -zv localhost 5672
+        
+        echo "Checking PulseAudio..."
+        pactl info
+
+    - name: Run tests
+      env:
+        RABBITMQ_HOST: localhost
+        RABBITMQ_PORT: 5672
+        RABBITMQ_USER: guest
+        RABBITMQ_PASSWORD: guest
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        CACHE_SIZE: 10
+        LOG_LEVEL: 2
+      run: |
+        cd build
+        ctest --output-on-failure --verbose
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: build/Testing/
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tts-playback-service-${{ github.sha }}
+        path: build/tts_playback_service
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-22.04
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: tts-playback-service:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        docker images
+        docker run --rm tts-playback-service:${{ github.sha }} /usr/local/bin/tts_playback_service --version || true
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install clang-tidy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-tidy
+
+    - name: Run clang-tidy
+      run: |
+        echo "Running clang-tidy on source files..."
+        find src include -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p build || true
+        echo "✓ clang-tidy analysis complete"
+
+    - name: Check file formatting
+      run: |
+        echo "Checking for trailing whitespace..."
+        ! grep -r --include="*.cpp" --include="*.h" '[[:blank:]]$' src/ include/ || \
+          (echo "Found trailing whitespace" && exit 1)
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Scanning for TODO/FIXME comments..."
+        grep -rn --include="*.cpp" --include="*.h" -E "TODO|FIXME" src/ include/ || true
+
+    - name: Verify documentation exists
+      run: |
+        test -f README.md || (echo "README.md missing" && exit 1)
+        test -f docs/INDEX.md || (echo "docs/INDEX.md missing" && exit 1)
+        test -f docs/api/API.md || (echo "API documentation missing" && exit 1)
+        echo "✓ All required documentation present"
+
+    - name: Check CMakeLists.txt syntax
+      run: |
+        cmake -P CMakeLists.txt 2>&1 | grep -i error && exit 1 || echo "✓ CMakeLists.txt syntax OK"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'

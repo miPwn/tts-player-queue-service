@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: TTS Playback Service API
+  description: |
+    High-performance text-to-speech audio playback service with caching and queuing.
+    
+    The service accepts WAV audio files with corresponding text, caches them for repeated playback,
+    queues them for sequential playback, and plays them through the system's audio device.
+    
+    ## Features
+    - WAV file upload with text association
+    - Redis-based LRU caching
+    - RabbitMQ message queuing
+    - Synchronous audio playback (no overlaps)
+    - Zero-latency optimized processing
+    
+    ## Rate Limits
+    No rate limits currently implemented. Consider implementing based on your use case.
+    
+    ## Authentication
+    No authentication required in current version. Consider adding API keys for production.
+  version: 1.0.0
+  contact:
+    name: TTS Playback Service
+    url: https://github.com/your-org/tts-playback-service
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: http://tts-service:8080
+    description: Docker/K8s internal service
+  - url: https://tts.example.com
+    description: Production server (example)
+
+tags:
+  - name: Playback
+    description: Text-to-speech playback operations
+  - name: Health
+    description: Service health and status
+
+paths:
+  /api/tts/play:
+    post:
+      tags:
+        - Playback
+      summary: Queue TTS audio for playback
+      description: |
+        Submit a WAV audio file with corresponding text for playback.
+        
+        The service will:
+        1. Check if audio for this text is cached
+        2. If not cached, store the WAV file in Redis cache
+        3. Queue the playback job in RabbitMQ
+        4. Return immediately with job status
+        
+        Audio will be played asynchronously through the configured audio device.
+      operationId: queuePlayback
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - text
+                - wav
+              properties:
+                text:
+                  type: string
+                  description: The text content that was used to generate the TTS audio
+                  example: "Hello, this is a test sentence."
+                  minLength: 1
+                  maxLength: 10000
+                wav:
+                  type: string
+                  format: binary
+                  description: WAV audio file (binary data)
+            encoding:
+              wav:
+                contentType: audio/wav, audio/x-wav
+      responses:
+        '200':
+          description: Job successfully queued for playback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackResponse'
+              examples:
+                success:
+                  value:
+                    status: queued
+                    text: "Hello, this is a test sentence."
+                    size: 44100
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_field:
+                  value:
+                    error: "Missing 'text' field"
+                missing_wav:
+                  value:
+                    error: "Missing 'wav' file"
+                invalid_content_type:
+                  value:
+                    error: "Content-Type must be multipart/form-data"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                server_error:
+                  value:
+                    error: "Failed to process request: RabbitMQ connection error"
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check endpoint
+      description: |
+        Returns the health status of the service.
+        
+        Use this endpoint for:
+        - Kubernetes liveness probes
+        - Kubernetes readiness probes
+        - Load balancer health checks
+        - Monitoring systems
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  value:
+                    status: healthy
+                    service: tts-playback-service
+
+components:
+  schemas:
+    PlaybackResponse:
+      type: object
+      required:
+        - status
+        - text
+        - size
+      properties:
+        status:
+          type: string
+          description: Job status
+          enum:
+            - queued
+          example: queued
+        text:
+          type: string
+          description: Text content (truncated to 100 chars in response)
+          example: "Hello, this is a test sentence."
+        size:
+          type: integer
+          format: int64
+          description: WAV file size in bytes
+          example: 44100
+          minimum: 0
+      example:
+        status: queued
+        text: "Hello, this is a test sentence."
+        size: 44100
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: "Missing 'text' field"
+      example:
+        error: "Missing 'text' field"
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          description: Health status of the service
+          enum:
+            - healthy
+            - unhealthy
+          example: healthy
+        service:
+          type: string
+          description: Service identifier
+          example: tts-playback-service
+        version:
+          type: string
+          description: Service version (optional)
+          example: "1.0.0"
+        uptime:
+          type: integer
+          format: int64
+          description: Service uptime in seconds (optional)
+          example: 3600
+      example:
+        status: healthy
+        service: tts-playback-service
+
+  examples:
+    SampleWavFile:
+      summary: Sample WAV file for testing
+      description: |
+        A minimal valid WAV file for testing purposes.
+        You can generate test WAV files using tools like:
+        - `sox -n -r 44100 -c 2 test.wav synth 1 sine 440`
+        - Online TTS services
+        - ffmpeg
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API Key authentication (not currently implemented).
+        Future versions may require an API key for access control.
+
+security: []
+
+externalDocs:
+  description: Full documentation and source code
+  url: https://github.com/your-org/tts-playback-service

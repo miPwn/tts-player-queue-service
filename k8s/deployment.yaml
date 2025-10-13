@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-playback
+  namespace: tts-production
+  labels:
+    app: tts-playback
+    version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tts-playback
+  template:
+    metadata:
+      labels:
+        app: tts-playback
+        version: "1.0.0"
+    spec:
+      containers:
+      - name: tts-service
+        image: tts-playback-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: tts-config
+        - secretRef:
+            name: tts-secrets
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        volumeMounts:
+        - name: audio-device
+          mountPath: /dev/snd
+      volumes:
+      - name: audio-device
+        hostPath:
+          path: /dev/snd
+          type: Directory
+      securityContext:
+        runAsNonRoot: false
+        privileged: true

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tts-config
+  namespace: tts-production
+data:
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: "guest"
+  RABBITMQ_VHOST: "/"
+  RABBITMQ_QUEUE: "tts_playback_queue"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ""
+  CACHE_SIZE: "100"
+  API_HOST: "0.0.0.0"
+  API_PORT: "8080"
+  PULSEAUDIO_SINK: ""
+  LOG_LEVEL: "2"

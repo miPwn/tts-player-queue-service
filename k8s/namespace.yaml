@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tts-production
+  labels:
+    name: tts-production
+    environment: production
