@@ -19,34 +19,30 @@ void ApiServer::setJobHandler(std::function<void(const TTSRequest&)> handler) {
 void ApiServer::start() {
     server_->Post("/api/tts/play", [this](const httplib::Request& req, httplib::Response& res) {
         try {
-            if (req.get_header_value("Content-Type").find("multipart/form-data") == std::string::npos) {
-                res.status = 400;
-                res.set_content("{\"error\": \"Content-Type must be multipart/form-data\"}", "application/json");
-                return;
-            }
-
             std::string text;
             std::vector<char> wav_data;
 
-            // Get text parameter from multipart form
-            if (req.has_param("text")) {
-                text = req.get_param_value("text");
-            } else {
+            // Extract text from multipart form data
+            bool has_text = false;
+            bool has_wav = false;
+
+            for (const auto& file : req.files) {
+                if (file.first == "text") {
+                    text = file.second.content;
+                    has_text = true;
+                } else if (file.first == "wav") {
+                    wav_data.assign(file.second.content.begin(), file.second.content.end());
+                    has_wav = true;
+                }
+            }
+
+            if (!has_text) {
                 res.status = 400;
                 res.set_content("{\"error\": \"Missing 'text' field\"}", "application/json");
                 return;
             }
 
-            // Get wav file from multipart form
-            try {
-                auto wav_file = req.get_file_value("wav");
-                if (wav_file.content.empty()) {
-                    res.status = 400;
-                    res.set_content("{\"error\": \"Missing 'wav' file\"}", "application/json");
-                    return;
-                }
-                wav_data.assign(wav_file.content.begin(), wav_file.content.end());
-            } catch (...) {
+            if (!has_wav) {
                 res.status = 400;
                 res.set_content("{\"error\": \"Missing 'wav' file\"}", "application/json");
                 return;

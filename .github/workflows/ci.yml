@@ -27,7 +27,7 @@ jobs:
           --health-retries 5
 
       rabbitmq:
-        image: rabbitmq:3.12-alpine
+        image: rabbitmq:3.13-alpine
         ports:
           - 5672:5672
         env:
@@ -109,15 +109,15 @@ jobs:
 
     - name: Install header-only libraries
       run: |
-        # cpp-httplib
+        # cpp-httplib (use v0.14.3 - stable version with multipart support)
         sudo mkdir -p /usr/local/include
-        wget https://raw.githubusercontent.com/yhirose/cpp-httplib/master/httplib.h \
+        wget https://raw.githubusercontent.com/yhirose/cpp-httplib/v0.14.3/httplib.h \
           -O /tmp/httplib.h
         sudo cp /tmp/httplib.h /usr/local/include/
 
-        # nlohmann/json
+        # nlohmann/json (use v3.11.3 - stable version)
         sudo mkdir -p /usr/local/include/nlohmann
-        wget https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp \
+        wget https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp \
           -O /tmp/json.hpp
         sudo cp /tmp/json.hpp /usr/local/include/nlohmann/
 
