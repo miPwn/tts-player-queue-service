@@ -21,18 +21,19 @@ void ApiServer::start() {
         try {
             std::string text;
             std::vector<char> wav_data;
-
-            // Extract text from multipart form data
             bool has_text = false;
             bool has_wav = false;
 
-            for (const auto& file : req.files) {
-                if (file.first == "text") {
-                    text = file.second.content;
-                    has_text = true;
-                } else if (file.first == "wav") {
-                    wav_data.assign(file.second.content.begin(), file.second.content.end());
-                    has_wav = true;
+            // Iterate through multipart form data
+            if (req.is_multipart_form_data()) {
+                for (const auto& file : req.files) {
+                    if (file.name == "text") {
+                        text = file.content;
+                        has_text = true;
+                    } else if (file.name == "wav") {
+                        wav_data.assign(file.content.begin(), file.content.end());
+                        has_wav = true;
+                    }
                 }
             }
 
