@@ -24,16 +24,20 @@ void ApiServer::start() {
             bool has_text = false;
             bool has_wav = false;
 
-            // Iterate through multipart form data
-            if (req.is_multipart_form_data()) {
-                for (const auto& file : req.files) {
-                    if (file.name == "text") {
-                        text = file.content;
-                        has_text = true;
-                    } else if (file.name == "wav") {
-                        wav_data.assign(file.content.begin(), file.content.end());
-                        has_wav = true;
-                    }
+            // Access multipart form data through params and files
+            // Text field comes through params
+            if (req.has_param("text")) {
+                text = req.get_param_value("text");
+                has_text = true;
+            }
+
+            // WAV file comes through files - iterate to find it
+            for (size_t i = 0; i < req.files.size(); ++i) {
+                const auto& file = req.files[i];
+                if (file.name == "wav") {
+                    wav_data.assign(file.content.begin(), file.content.end());
+                    has_wav = true;
+                    break;
                 }
             }
 
