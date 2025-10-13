@@ -28,16 +28,20 @@ void ApiServer::start() {
             std::string text;
             std::vector<char> wav_data;
 
-            if (req.has_file("text")) {
-                text = req.get_file_value("text").content;
+            // Check for text field in multipart form
+            auto text_it = req.files.find("text");
+            if (text_it != req.files.end()) {
+                text = text_it->second.content;
             } else {
                 res.status = 400;
                 res.set_content("{\"error\": \"Missing 'text' field\"}", "application/json");
                 return;
             }
 
-            if (req.has_file("wav")) {
-                const auto& wav_file = req.get_file_value("wav");
+            // Check for wav file in multipart form
+            auto wav_it = req.files.find("wav");
+            if (wav_it != req.files.end()) {
+                const auto& wav_file = wav_it->second;
                 wav_data.assign(wav_file.content.begin(), wav_file.content.end());
             } else {
                 res.status = 400;
@@ -49,16 +53,16 @@ void ApiServer::start() {
                 TTSRequest tts_req;
                 tts_req.text = text;
                 tts_req.wav_data = wav_data;
-                
+
                 job_handler_(tts_req);
-                
+
                 json response;
                 response["status"] = "queued";
                 response["text"] = text.substr(0, 100);
                 response["size"] = wav_data.size();
-                
+
                 res.set_content(response.dump(), "application/json");
-                spdlog::info("API: Queued TTS job - text: {}, size: {} bytes", 
+                spdlog::info("API: Queued TTS job - text: {}, size: {} bytes",
                             text.substr(0, 50), wav_data.size());
             } else {
                 res.status = 500;
