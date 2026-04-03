@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_HOST_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_HOST_PORT:-15672}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -18,7 +16,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
     command: redis-server --save 60 1 --loglevel warning
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -29,7 +27,7 @@ services:
   tts-playback:
     build: .
     ports:
-      - "8080:8080"
+      - "${TTS_PLAYBACK_HOST_PORT:-8080}:8080"
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -43,7 +41,12 @@ services:
       CACHE_SIZE: 10
       API_HOST: 0.0.0.0
       API_PORT: 8080
+      XDG_RUNTIME_DIR: /run/user/1000
+      PULSE_SERVER: unix:/run/user/1000/pulse/native
       PULSEAUDIO_SINK: ""
+      DOTMATRIX_ENABLED: ${DOTMATRIX_ENABLED:-1}
+      DOTMATRIX_QUEUE_DIR: /tmp/halo-dotmatrix/queue
+      DOTMATRIX_WAV_DIR: /tmp/halo-dotmatrix/wav
       LOG_LEVEL: 2
     depends_on:
       rabbitmq:
@@ -53,6 +56,7 @@ services:
     volumes:
       - /etc/pulse:/etc/pulse:ro
       - /run/user/1000/pulse:/run/user/1000/pulse:ro
+      - /tmp/halo-dotmatrix:/tmp/halo-dotmatrix
     devices:
       - /dev/snd:/dev/snd
     privileged: true

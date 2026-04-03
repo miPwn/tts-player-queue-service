@@ -15,6 +15,7 @@ endif()
 
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 pkg_check_modules(PULSE REQUIRED libpulse libpulse-simple)
 pkg_check_modules(EVENT REQUIRED libevent)
@@ -33,6 +34,8 @@ add_executable(tts_playback_service
 
 target_link_libraries(tts_playback_service
     Threads::Threads
+    OpenSSL::SSL
+    OpenSSL::Crypto
     ${PULSE_LIBRARIES}
     ${EVENT_LIBRARIES}
     amqpcpp
@@ -52,21 +55,21 @@ option(BUILD_TESTING "Build unit tests" ON)
 
 if(BUILD_TESTING)
     enable_testing()
-    
+
     include(FetchContent)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.14.0
     )
-    
+
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
-    
+
     include(GoogleTest)
-    
+
     add_subdirectory(tests)
-    
+
     message(STATUS "Unit tests enabled")
 endif()
 

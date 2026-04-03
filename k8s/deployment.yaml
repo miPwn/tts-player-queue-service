@@ -30,6 +30,13 @@ spec:
             name: tts-config
         - secretRef:
             name: tts-secrets
+        env:
+        - name: DOTMATRIX_ENABLED
+          value: "1"
+        - name: DOTMATRIX_QUEUE_DIR
+          value: /tmp/halo-dotmatrix/queue
+        - name: DOTMATRIX_WAV_DIR
+          value: /tmp/halo-dotmatrix/wav
         resources:
           requests:
             cpu: 500m
@@ -56,11 +63,17 @@ spec:
         volumeMounts:
         - name: audio-device
           mountPath: /dev/snd
+        - name: dotmatrix-state
+          mountPath: /tmp/halo-dotmatrix
       volumes:
       - name: audio-device
         hostPath:
           path: /dev/snd
           type: Directory
+      - name: dotmatrix-state
+        hostPath:
+          path: /tmp/halo-dotmatrix
+          type: DirectoryOrCreate
       securityContext:
         runAsNonRoot: false
         privileged: true

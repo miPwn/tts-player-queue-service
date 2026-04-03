@@ -13,6 +13,7 @@ A high-performance C++ microservice for text-to-speech audio playback with Rabbi
 - **RabbitMQ Queue**: Asynchronous job processing with guaranteed order
 - **Redis Cache**: LRU-based in-memory caching of WAV files keyed by text
 - **PulseAudio Playback**: Synchronous audio playback preventing overlaps
+- **HALO Dotmatrix Hook**: Optional host-shared spool output for Falcon-side display animation
 - **High Performance**: Optimized C++17 with compiler flags (-O3, -march=native, LTO)
 - **Containerized**: Docker multi-stage build for minimal image size
 - **Configurable**: All settings via environment variables
@@ -22,23 +23,23 @@ A high-performance C++ microservice for text-to-speech audio playback with Rabbi
 ```mermaid
 flowchart TB
     A[Client] -->|POST /api/tts/play| B[REST API<br/>cpp-httplib]
-    
+
     B --> C{Cache Hit?}
     C -->|Yes| D[Get from Redis]
     C -->|No| E[Store in Redis]
-    
+
     D --> F[Thread-Safe<br/>Publish Queue]
     E --> F
-    
+
     F --> G[RabbitMQ<br/>Event Loop<br/>libevent]
-    
+
     G --> H[Consumer<br/>Thread]
-    
+
     H --> I[Parse WAV<br/>Headers]
     I --> J[PulseAudio<br/>Playback]
-    
+
     J --> K[Synchronous<br/>No Overlap]
-    
+
     style C fill:#FFD700
     style F fill:#87CEEB
     style K fill:#90EE90
@@ -60,16 +61,16 @@ sequenceDiagram
     participant MQ as RabbitMQ
     participant Consumer
     participant Audio as PulseAudio
-    
+
     Client->>API: POST /api/tts/play
     API->>Queue: Push job (mutex)
     Queue-->>API: OK
     API-->>Client: 200 Queued
-    
+
     Event->>Queue: Poll (10ms)
     Queue->>Event: Pop job (mutex)
     Event->>MQ: Publish (Base64)
-    
+
     MQ->>Consumer: Deliver message
     Consumer->>Audio: Play WAV (sync)
     Audio-->>Consumer: Done
@@ -183,6 +184,9 @@ All configuration is via environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PULSEAUDIO_SINK` | `` | PulseAudio sink name (empty=default) |
+| `DOTMATRIX_ENABLED` | `0` | Write host-side visualization jobs for Falcon dotmatrix daemon |
+| `DOTMATRIX_QUEUE_DIR` | `/tmp/halo-dotmatrix/queue` | Shared queue directory for dotmatrix trigger JSON files |
+| `DOTMATRIX_WAV_DIR` | `/tmp/halo-dotmatrix/wav` | Shared directory for transient WAV payloads consumed by the daemon |
 
 ### Logging
 
@@ -196,7 +200,7 @@ All configuration is via environment variables:
 2. **Zero-Copy Operations**: Direct memory buffer handling where possible
 3. **LRU Caching**: Redis-backed cache with configurable size
 4. **Async I/O**: libevent-based RabbitMQ for non-blocking operations
-5. **Thread Safety**: 
+5. **Thread Safety**:
    - Mutex-protected publish queue for cross-thread communication
    - All AMQP operations execute on dedicated event loop thread
    - Lock-free design where possible
@@ -290,7 +294,7 @@ The project includes integration tests using Google Test framework:
 
 **Test Coverage**:
 - ✅ Config class (8 tests)
-- ✅ RedisCache class (12 tests)  
+- ✅ RedisCache class (12 tests)
 - ✅ RabbitMQClient class (10 tests)
 - ✅ AudioPlayer class (11 tests)
 - ✅ ApiServer class (10 tests)

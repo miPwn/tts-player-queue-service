@@ -40,7 +40,7 @@ COPY src/ /build/src/
 COPY include/ /build/include/
 
 RUN mkdir -p /build/build && cd /build/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF .. && \
     make -j$(nproc) && \
     strip tts_playback_service
 
@@ -72,6 +72,9 @@ ENV RABBITMQ_HOST=rabbitmq \
     API_HOST=0.0.0.0 \
     API_PORT=8080 \
     PULSEAUDIO_SINK="" \
+    DOTMATRIX_ENABLED=0 \
+    DOTMATRIX_QUEUE_DIR=/tmp/halo-dotmatrix/queue \
+    DOTMATRIX_WAV_DIR=/tmp/halo-dotmatrix/wav \
     LOG_LEVEL=2
 
 EXPOSE 8080

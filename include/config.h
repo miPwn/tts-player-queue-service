@@ -27,7 +27,11 @@ public:
     int api_port;
 
     std::string pulseaudio_sink;
-    
+
+    bool dotmatrix_enabled;
+    std::string dotmatrix_queue_dir;
+    std::string dotmatrix_wav_dir;
+
     int log_level;
 
     void load() {
@@ -47,6 +51,10 @@ public:
         api_port = getEnvInt("API_PORT", 8080);
 
         pulseaudio_sink = getEnv("PULSEAUDIO_SINK", "");
+
+        dotmatrix_enabled = getEnvInt("DOTMATRIX_ENABLED", 0) != 0;
+        dotmatrix_queue_dir = getEnv("DOTMATRIX_QUEUE_DIR", "/tmp/halo-dotmatrix/queue");
+        dotmatrix_wav_dir = getEnv("DOTMATRIX_WAV_DIR", "/tmp/halo-dotmatrix/wav");
 
         log_level = getEnvInt("LOG_LEVEL", 2);
     }
