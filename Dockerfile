@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
 # Multi-stage build for optimized container size
 FROM ubuntu:22.04 AS builder
 
@@ -62,12 +64,10 @@ RUN ldconfig
 ENV RABBITMQ_HOST=rabbitmq \
     RABBITMQ_PORT=5672 \
     RABBITMQ_USER=guest \
-    RABBITMQ_PASSWORD=guest \
     RABBITMQ_VHOST=/ \
     RABBITMQ_QUEUE=tts_playback_queue \
     REDIS_HOST=redis \
     REDIS_PORT=6379 \
-    REDIS_PASSWORD="" \
     CACHE_SIZE=10 \
     API_HOST=0.0.0.0 \
     API_PORT=8080 \

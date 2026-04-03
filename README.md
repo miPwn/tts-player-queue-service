@@ -126,6 +126,7 @@ curl -X POST http://localhost:8080/api/tts/play \
 ```
 
 Response:
+
 ```json
 {
   "status": "queued",
@@ -141,6 +142,7 @@ curl http://localhost:8080/health
 ```
 
 Response:
+
 ```json
 {
   "status": "healthy",
@@ -154,45 +156,45 @@ All configuration is via environment variables:
 
 ### RabbitMQ Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RABBITMQ_HOST` | `rabbitmq` | RabbitMQ hostname |
-| `RABBITMQ_PORT` | `5672` | RabbitMQ port |
-| `RABBITMQ_USER` | `guest` | RabbitMQ username |
-| `RABBITMQ_PASSWORD` | `guest` | RabbitMQ password |
-| `RABBITMQ_VHOST` | `/` | RabbitMQ virtual host |
-| `RABBITMQ_QUEUE` | `tts_playback_queue` | Queue name |
+| Variable              | Default              | Description            |
+| --------------------- | -------------------- | ---------------------- |
+| `RABBITMQ_HOST`       | `rabbitmq`           | RabbitMQ hostname      |
+| `RABBITMQ_PORT`       | `5672`               | RabbitMQ port          |
+| `RABBITMQ_USER`       | `guest`              | RabbitMQ username      |
+| `RABBITMQ_PASSWORD`   | runtime-defined      | RabbitMQ password      |
+| `RABBITMQ_VHOST`      | `/`                  | RabbitMQ virtual host  |
+| `RABBITMQ_QUEUE`      | `tts_playback_queue` | Queue name             |
 
 ### Redis Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `REDIS_HOST` | `redis` | Redis hostname |
-| `REDIS_PORT` | `6379` | Redis port |
-| `REDIS_PASSWORD` | `` | Redis password (optional) |
-| `CACHE_SIZE` | `10` | Max cached WAV files (LRU) |
+| Variable           | Default           | Description                   |
+| ------------------ | ----------------- | ----------------------------- |
+| `REDIS_HOST`       | `redis`           | Redis hostname                |
+| `REDIS_PORT`       | `6379`            | Redis port                    |
+| `REDIS_PASSWORD`   | runtime-defined   | Redis password, if required   |
+| `CACHE_SIZE`       | `10`              | Max cached WAV files (LRU)    |
 
 ### API Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_HOST` | `0.0.0.0` | API server bind address |
-| `API_PORT` | `8080` | API server port |
+| Variable   | Default     | Description             |
+| ---------- | ----------- | ----------------------- |
+| `API_HOST` | `0.0.0.0`   | API server bind address |
+| `API_PORT` | `8080`      | API server port         |
 
 ### Audio Settings
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PULSEAUDIO_SINK` | `` | PulseAudio sink name (empty=default) |
-| `DOTMATRIX_ENABLED` | `0` | Write host-side visualization jobs for Falcon dotmatrix daemon |
-| `DOTMATRIX_QUEUE_DIR` | `/tmp/halo-dotmatrix/queue` | Shared queue directory for dotmatrix trigger JSON files |
-| `DOTMATRIX_WAV_DIR` | `/tmp/halo-dotmatrix/wav` | Shared directory for transient WAV payloads consumed by the daemon |
+| Variable                | Default                     | Description                                                  |
+| ----------------------- | --------------------------- | ------------------------------------------------------------ |
+| `PULSEAUDIO_SINK`       | empty                       | PulseAudio sink name; empty uses the default sink            |
+| `DOTMATRIX_ENABLED`     | `0`                         | Write host-side visualization jobs for the Falcon daemon     |
+| `DOTMATRIX_QUEUE_DIR`   | `/tmp/halo-dotmatrix/queue` | Shared queue directory for dotmatrix trigger JSON files      |
+| `DOTMATRIX_WAV_DIR`     | `/tmp/halo-dotmatrix/wav`   | Shared directory for transient WAV payloads used by daemon   |
 
 ### Logging
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LOG_LEVEL` | `2` | 0=trace, 1=debug, 2=info, 3=warn, 4=error |
+| Variable    | Default   | Description                                   |
+| ----------- | --------- | --------------------------------------------- |
+| `LOG_LEVEL` | `2`       | `0=trace, 1=debug, 2=info, 3=warn, 4=error`   |
 
 ## Performance Optimizations
 
@@ -293,6 +295,7 @@ The project includes integration tests using Google Test framework:
 **Note**: These are integration tests requiring live Redis, RabbitMQ, and PulseAudio services. See `tests/UNIT_TESTING_GUIDE.md` for information on converting to isolated unit tests with mocks.
 
 **Test Coverage**:
+
 - ✅ Config class (8 tests)
 - ✅ RedisCache class (12 tests)
 - ✅ RabbitMQClient class (10 tests)
@@ -322,6 +325,7 @@ ctest --output-on-failure
 ### Test Requirements
 
 External services must be running:
+
 ```bash
 # Redis
 docker run -d -p 6379:6379 redis:7-alpine
@@ -336,7 +340,7 @@ See [`tests/README.md`](tests/README.md) for detailed testing documentation.
 
 - Health endpoint: `/health`
 - Structured JSON logging via spdlog
-- RabbitMQ management UI: http://localhost:15672 (guest/guest)
+- RabbitMQ management UI: [http://localhost:15672](http://localhost:15672) (`guest/guest`)
 
 ## License
 
@@ -345,12 +349,13 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 See [LICENSE](LICENSE) for the full license text.
 
 **Key Points:**
+
 - ✅ Free to use, modify, and distribute
 - ✅ Source code must be made available
 - ✅ Network use counts as distribution (AGPL provision)
 - ✅ Modifications must also be AGPL-3.0 licensed
 
-For more information, visit: https://www.gnu.org/licenses/agpl-3.0.html
+For more information, visit [GNU AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html).
 
 ## Author
 
