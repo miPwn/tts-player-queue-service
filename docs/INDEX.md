@@ -10,7 +10,7 @@ Welcome to the TTS Playback Service documentation. This index provides quick acc
 
 ### 🚀 Getting Started
 - [Main README](../README.md) - Project overview and quick start
-- [Project Summary](../PROJECT_SUMMARY.md) - Executive summary and highlights
+- [Release Checklist](guides/RELEASE_CHECKLIST.md) - release and repository hygiene checks
 
 ### 📖 Technical Documentation
 - [Technical Design Document](technical/DESIGN.md) - System design, architecture patterns, and decisions

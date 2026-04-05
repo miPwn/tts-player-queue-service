@@ -2,7 +2,7 @@
 
 ## TTS Playback Service
 
-**Version:** 1.0.0  
+**Version:** 1.0.0
 **Last Updated:** October 13, 2025
 
 ---
@@ -51,7 +51,7 @@ docker-compose up --build
 
 ### Option 1: Docker Development (Recommended)
 
-**Pros**: Consistent environment, all dependencies included  
+**Pros**: Consistent environment, all dependencies included
 **Cons**: Slower compilation, requires Docker
 
 ```bash
@@ -67,7 +67,7 @@ docker-compose down
 
 ### Option 2: Native Development
 
-**Pros**: Faster compilation, direct debugging  
+**Pros**: Faster compilation, direct debugging
 **Cons**: Manual dependency management
 
 #### Install System Dependencies
@@ -182,7 +182,7 @@ tts-playback-service/
 ├── docker-compose.yml         # Stack deployment
 ├── .env.example               # Config template
 ├── README.md                  # Main documentation
-└── PROJECT_SUMMARY.md         # Quick reference
+└── docs/                      # Maintained documentation tree
 
 ```
 
@@ -354,15 +354,15 @@ curl -u guest:guest http://localhost:15672/api/queues/%2F/tts_playback_queue
 
 TEST(RedisCacheTest, LRUEviction) {
     RedisCache cache("localhost", 6379, "", 2);
-    
+
     std::vector<char> wav1 = {0x01, 0x02};
     std::vector<char> wav2 = {0x03, 0x04};
     std::vector<char> wav3 = {0x05, 0x06};
-    
+
     cache.put("text1", wav1);
     cache.put("text2", wav2);
     cache.put("text3", wav3);  // Should evict text1
-    
+
     std::vector<char> result;
     EXPECT_FALSE(cache.get("text1", result));  // Evicted
     EXPECT_TRUE(cache.get("text2", result));   // Present

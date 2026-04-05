@@ -89,6 +89,15 @@ This project includes a comprehensive GitHub Actions CI/CD pipeline that automat
 
 See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed pipeline documentation.
 
+## Documentation
+
+The maintained documentation set lives under [docs/](docs/README.md):
+
+- architecture and design notes in [docs/technical/](docs/technical/)
+- developer and infrastructure guides in [docs/guides/](docs/guides/)
+- API reference in [docs/api/](docs/api/)
+- release process in [docs/guides/RELEASE_CHECKLIST.md](docs/guides/RELEASE_CHECKLIST.md)
+
 ## Quick Start
 
 ### Prerequisites
