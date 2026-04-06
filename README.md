@@ -97,6 +97,10 @@ The maintained documentation set lives under [docs/](docs/README.md):
 - developer and infrastructure guides in [docs/guides/](docs/guides/)
 - API reference in [docs/api/](docs/api/)
 - release process in [docs/guides/RELEASE_CHECKLIST.md](docs/guides/RELEASE_CHECKLIST.md)
+- deployment guardrails in [docs/guides/DEPLOYMENT_GUARDRAILS.md](docs/guides/DEPLOYMENT_GUARDRAILS.md)
+- deployment and release workflow in [docs/guides/DEPLOYMENT_RELEASE_WORKFLOW.md](docs/guides/DEPLOYMENT_RELEASE_WORKFLOW.md)
+
+This repo now also carries `deployment-contract.json` plus `scripts/validate_deployment_contract.py` so K3s, Docker Desktop replica paths, and cross-repo spool/API boundaries are tracked in-repo and checked in CI.
 
 ## Quick Start
 

@@ -32,3 +32,5 @@ git push origin main --tags
 - publish release notes
 - confirm badges and docs reflect the new version
 - smoke-test the container image and API health endpoint
+
+For the live Falcon K3s deploy path, use [DEPLOYMENT_RELEASE_WORKFLOW.md](DEPLOYMENT_RELEASE_WORKFLOW.md) after the release is cut.

@@ -1,0 +1,93 @@
+{
+  "repo": "tts-player-queue-service",
+  "deploymentModel": {
+    "runtimeTargets": [
+      {
+        "name": "falcon-k3s-tts-playback",
+        "environment": "falcon-k3s",
+        "kind": "k8s",
+        "status": "active",
+        "clusterTarget": "tts-production/tts-playback",
+        "sourcePaths": [
+          "Dockerfile",
+          "docs/guides/DEPLOYMENT_RELEASE_WORKFLOW.md",
+          "k8s/deployment.yaml",
+          "k8s/service.yaml",
+          "k8s/configmap.yaml",
+          "k8s/secret.yaml",
+          "scripts/deploy-tts-playback-k3s.sh"
+        ]
+      },
+      {
+        "name": "docker-desktop-replica-path",
+        "environment": "windows-client",
+        "kind": "service",
+        "status": "secondary",
+        "liveTarget": "docker-compose replica",
+        "sourcePaths": [
+          "docker-compose.yml"
+        ]
+      }
+    ],
+    "integrationPoints": [
+      {
+        "name": "halo-playback-http-api",
+        "targetRepo": "mercury-tts",
+        "kind": "http",
+        "pathOrEndpoint": "/api/tts/play",
+        "sourcePaths": [
+          "src/api_server.cpp",
+          "include/api_server.h"
+        ]
+      },
+      {
+        "name": "dotmatrix-spool",
+        "targetRepo": "hal-display",
+        "kind": "filesystem",
+        "pathOrEndpoint": "/tmp/halo-dotmatrix",
+        "sourcePaths": [
+          "src/main.cpp",
+          "k8s/deployment.yaml"
+        ]
+      },
+      {
+        "name": "rabbitmq-and-redis-dependencies",
+        "targetRepo": "shared-runtime",
+        "kind": "queue",
+        "pathOrEndpoint": "tts-production/rabbitmq-service and tts-production/redis-service",
+        "sourcePaths": [
+          "src/rabbitmq_client.cpp",
+          "src/redis_cache.cpp"
+        ]
+      }
+    ]
+  },
+  "guardrails": {
+    "changeSets": [
+      {
+        "name": "k8s-runtime-assets",
+        "triggers": [
+          "Dockerfile",
+          "docker-compose.yml",
+          "k8s/**",
+          "docs/guides/DEPLOYMENT_RELEASE_WORKFLOW.md",
+          "scripts/deploy-tts-playback-k3s.sh"
+        ],
+        "requiresTouch": [
+          "deployment-contract.json"
+        ]
+      },
+      {
+        "name": "api-and-spool-boundary",
+        "triggers": [
+          "src/api_server.cpp",
+          "include/api_server.h",
+          "src/main.cpp"
+        ],
+        "requiresTouch": [
+          "deployment-contract.json"
+        ]
+      }
+    ]
+  }
+}

@@ -37,6 +37,28 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Validate deployment contract
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PUSH_BEFORE_SHA: ${{ github.event.before }}
+      run: |
+        BASE_REF=""
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          BASE_REF="$PR_BASE_SHA"
+        else
+          BASE_REF="$PUSH_BEFORE_SHA"
+        fi
+        python3 scripts/validate_deployment_contract.py --check-changed --base-ref "$BASE_REF"
+
+    - name: Test deployment tooling
+      run: python3 -m unittest tests.test_deployment_tools
+
+    - name: Build release bundles
+      run: python3 scripts/build_release_bundle.py
 
     - name: Install system dependencies
       run: |
@@ -186,6 +208,12 @@ jobs:
       with:
         name: tts-playback-service-${{ github.sha }}
         path: build/tts_playback_service
+
+    - name: Upload release bundles
+      uses: actions/upload-artifact@v4
+      with:
+        name: tts-player-queue-release-bundles
+        path: dist/release-bundles/
 
   docker-build:
     name: Docker Build and Push
