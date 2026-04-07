@@ -16,6 +16,10 @@ void ApiServer::setJobHandler(std::function<void(const TTSRequest&)> handler) {
     job_handler_ = handler;
 }
 
+void ApiServer::setHealthHandler(std::function<json()> handler) {
+  health_handler_ = handler;
+}
+
 void ApiServer::start() {
     server_->Post("/api/tts/play", [this](const httplib::Request& req, httplib::Response& res) {
         try {
@@ -78,12 +82,21 @@ void ApiServer::start() {
         }
     });
 
-    server_->Get("/health", [](const httplib::Request&, httplib::Response& res) {
-        json health;
-        health["status"] = "healthy";
-        health["service"] = "tts-playback-service";
-        res.set_content(health.dump(), "application/json");
-    });
+    server_->Get("/health",
+                 [this](const httplib::Request&, httplib::Response& res) {
+                   json health;
+                   if (health_handler_) {
+                     health = health_handler_();
+                   } else {
+                     health["status"] = "healthy";
+                     health["service"] = "tts-playback-service";
+                   }
+
+                   if (health.value("status", "healthy") != "healthy") {
+                     res.status = 503;
+                   }
+                   res.set_content(health.dump(), "application/json");
+                 });
 
     spdlog::info("Starting API server on {}:{}", host_, port_);
     server_->listen(host_.c_str(), port_);

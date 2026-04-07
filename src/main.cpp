@@ -169,6 +169,14 @@ int main() {
         });
 
         ApiServer api_server(config.api_host, config.api_port);
+        api_server.setHealthHandler([rabbitmq]() {
+          json health;
+          health["service"] = "tts-playback-service";
+          health["rabbitmq"] =
+              rabbitmq->isHealthy() ? "connected" : "disconnected";
+          health["status"] = rabbitmq->isHealthy() ? "healthy" : "unhealthy";
+          return health;
+        });
 
         api_server.setJobHandler([cache, rabbitmq, &config](const TTSRequest& req) {
             std::vector<char> cached_wav;

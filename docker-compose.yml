@@ -28,6 +28,7 @@ services:
     build: .
     ports:
       - "${TTS_PLAYBACK_HOST_PORT:-8080}:8080"
+    user: "${PLAYBACK_UID:-1000}:${PLAYBACK_GID:-1000}"
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -43,6 +44,7 @@ services:
       API_PORT: 8080
       XDG_RUNTIME_DIR: /run/user/1000
       PULSE_SERVER: unix:/run/user/1000/pulse/native
+      PULSE_COOKIE: /tmp/pulse-cookie
       PULSEAUDIO_SINK: ""
       DOTMATRIX_ENABLED: ${DOTMATRIX_ENABLED:-1}
       DOTMATRIX_QUEUE_DIR: /tmp/halo-dotmatrix/queue
@@ -55,8 +57,12 @@ services:
         condition: service_healthy
     volumes:
       - /etc/pulse:/etc/pulse:ro
+      - ${PULSE_COOKIE_HOST_PATH:-/home/mipwn/.config/pulse/cookie}:/tmp/pulse-cookie:ro
       - /run/user/1000/pulse:/run/user/1000/pulse:ro
       - /tmp/halo-dotmatrix:/tmp/halo-dotmatrix
+    group_add:
+      - "${PLAYBACK_AUDIO_GID:-29}"
     devices:
       - /dev/snd:/dev/snd
     privileged: true
+    restart: unless-stopped
